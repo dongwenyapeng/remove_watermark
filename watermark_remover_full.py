@@ -11,7 +11,7 @@ TEMP_VIDEO = 'temp.mp4'
 IMAGE_PATH = 'image'
 
 
-class WatermarkRemover():
+class WatermarkRemoverFull():
 
     def __init__(self, threshold: int, kernel_size: int):
         self.threshold = threshold  # 阈值分割所用阈值
@@ -91,32 +91,22 @@ class WatermarkRemover():
 
     def generate_watermark_picture_mask(self, img_path: str) -> numpy.ndarray:
         '''
-        自己尝试写的方法，做处理
-    截取视频中多帧图像生成多张水印蒙版，通过逻辑与计算生成最终水印蒙版
-    :param video_path: 视频文件路径
+        截取图片生成水印蒙版
+    :param video_path: 图片文件路径
     :return: 水印蒙版
 
     '''
         img = cv2.imread(img_path)
-        # success, frame = img.read()
 
         roi = self.select_roi(img, 'select watermark ROI')
         print("roi值为：",roi)
         mask = numpy.ones((img.shape[0], img.shape[1]), numpy.uint8)
         mask.fill(255)
 
-        # 视频文件处理需要获取到视频的总帧数step = video.get(cv2.CAP_PROP_FRAME_COUNT)
-        # step = video.get(cv2.CAP_PROP_FRAME_COUNT) // 5
-
-        # index = 0
-        # while success:
-        #    if index % step == 0:
         mask = cv2.bitwise_and(mask, self.generate_single_mask(img, roi, self.threshold))
-        #  success, frame = video.read()
-        #   index += 1
-        # video.release()
 
         return self.dilate_mask(mask)
+
 
     def generate_subtitle_mask(self, frame: numpy.ndarray, roi: list) -> numpy.ndarray:
         '''
@@ -231,7 +221,7 @@ class WatermarkRemover():
             os.remove(TEMP_VIDEO)
 
 
-#自己尝试一下写出去除图片水印
+#去除图片水印
     def remove_img_watermark(self):
         '''
     去除图片水印
@@ -245,45 +235,24 @@ class WatermarkRemover():
         for i, name in enumerate(filenames):
             if i == 0:
                 # 生成水印蒙版
-                # mask = self.generate_watermark_mask(name)
                 mask = self.generate_watermark_picture_mask(name)
             print("mask----mask：",mask)
 
 
-            # # 创建待写入文件对象
+            # 创建待写入文件对象
             # img = cv2.VideoCapture(name)
             img = cv2.imread(name)
             print("070707：",type(img),img)
 
-            # fps = img.get(cv2.CAP_PROP_FPS)
-            # print("080808:",type(fps),fps)
-            # size = (int(img.get(cv2.CAP_PROP_FRAME_WIDTH)), int(img.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-            # video_writer = cv2.VideoWriter(TEMP_VIDEO, cv2.VideoWriter_fourcc(*'mp4v'), fps, size)
-
-            # # 逐帧处理图像
-            # success, frame = img.read() #视频的这个处理等于图片的  ： img = cv2.imread(name)
-            # print("lllllll001:", type(frame), frame)
-
-            # while success:
+            #图片修复
             inpaint_picture = self.inpaint_image(img, mask)
-                # video_writer.write(frame)
-                # success, frame = img.read()
 
-            # img.release()
-            # # video_writer.release()
-            # # img.save(OUTPUT_PATH)
+
+            # 封装图片
             (_, filename) = os.path.split(name)
             output_path = os.path.join(OUTPUT_PATH, filename.split('.')[0] + '_no_watermark.jpeg')
             cv2.imwrite(output_path,inpaint_picture)
-            # output_path = os.path.join(OUTPUT_PATH, img.split('.')[0] + '_no_watermark.jpeg')
-            # clip.to_videofile(output_path)
-            # # # # 封装视频
-            # print("3333333333：", type(name), name)
-            # (_, filename) = os.path.split(name)
-            # print("090909：", type(filename), filename)
-            # output_path = os.path.join(OUTPUT_PATH, filename.split('.')[0] + '_no_watermark.mp4')  # 输出文件路径
-            # print("kkkkkkkkk",output_path)
-            # self.merge_audio(name, output_path, TEMP_VIDEO)
+
 
     if os.path.exists(TEMP_VIDEO):
         os.remove(TEMP_VIDEO)
@@ -291,12 +260,12 @@ class WatermarkRemover():
 if __name__ == '__main__':
     sel=input('1：视频去水印, 2:视频去字幕,3:图片去水印\n')
     if sel=='1':
-        remover = WatermarkRemover(threshold=80, kernel_size=5)
+        remover = WatermarkRemoverFull(threshold=80, kernel_size=5)
         remover.remove_video_watermark()
     if sel=='2':
-        remover = WatermarkRemover(threshold=80, kernel_size=5)
+        remover = WatermarkRemoverFull(threshold=80, kernel_size=5)
         remover.remove_video_subtitle()
     if sel == '3':
-        remover = WatermarkRemover(threshold=80, kernel_size=5)
+        remover = WatermarkRemoverFull(threshold=80, kernel_size=5)
         remover.remove_img_watermark()
 
